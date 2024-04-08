@@ -4,7 +4,6 @@
     {
       "src": "dist/main.js",
       "use": "@vercel/node",
-      "buildCommand": "npm run build",
       "outputDirectory": "dist"
     }
   ],
