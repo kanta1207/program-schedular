@@ -1,0 +1,116 @@
+get:
+  tags:
+    - Cohort
+  summary: Get the cohort by id
+  parameters:
+    - in: path
+      name: cohortId
+      schema:
+        type: integer
+      required: true
+      description: Id of the cohort to get
+  responses:
+    '200':
+      description: Returns the cohort
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - statusCode
+              - message
+              - data
+            properties:
+              statusCode:
+                type: integer
+                example: 200
+              message:
+                type: string
+                example: OK
+              data:
+                allOf:
+                  - $ref: '../../schemas/cohort/cohortStaticProps.yml'
+                  - $ref: '../../schemas/cohort/cohortDynamicProps.yml'
+                  - $ref: '../../schemas/cohort/cohortStaticForeignProps.yml'
+    '400':
+      $ref: '../../index.yml#/components/schemas/400Error'
+    '500':
+      $ref: '../../index.yml#/components/schemas/500Error'
+patch:
+  tags:
+    - Cohort
+  summary: Update the cohort by id
+  parameters:
+    - in: path
+      name: cohortId
+      schema:
+        type: integer
+      required: true
+      description: Id of the cohort to get
+  requestBody:
+    content:
+      application/json:
+        schema:
+          allOf:
+            - $ref: '../../schemas/cohort/cohortDynamicProps.yml'
+            - $ref: '../../schemas/cohort/cohortDynamicForeignProps.yml'
+  responses:
+    '200':
+      description: Returns the updated cohort
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - statusCode
+              - message
+              - data
+            properties:
+              statusCode:
+                type: number
+                example: 200
+              message:
+                type: string
+                example: Updated
+              data:
+                allOf:
+                  - $ref: '../../schemas/cohort/cohortStaticProps.yml'
+                  - $ref: '../../schemas/cohort/cohortDynamicProps.yml'
+                  - $ref: '../../schemas/cohort/cohortStaticForeignProps.yml'
+    '400':
+      $ref: '../../index.yml#/components/schemas/400Error'
+    '500':
+      $ref: '../../index.yml#/components/schemas/500Error'
+delete:
+  tags:
+    - Cohort
+  summary: Delete the cohort by id
+  parameters:
+    - in: path
+      name: cohortId
+      schema:
+        type: integer
+      required: true
+      description: Id of the cohort to get
+  responses:
+    '204':
+      description: Delete cohort by id
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                example: 204
+              message:
+                type: string
+                example: No Content
+              data:
+                type: string
+                nullable: true
+                example: null
+    '400':
+      $ref: '../../index.yml#/components/schemas/400Error'
+    '500':
+      $ref: '../../index.yml#/components/schemas/500Error'

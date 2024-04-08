@@ -1,0 +1,15 @@
+type: object
+required:
+  - id
+  - name
+  - floor
+properties:
+  id:
+    type: integer
+    example: 1
+  name:
+    type: string
+    example: Facebook
+  floor:
+    type: string
+    example: 2nd

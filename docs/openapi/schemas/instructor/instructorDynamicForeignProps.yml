@@ -1,0 +1,23 @@
+type: object
+required:
+  - contractTypeId
+  - weekdaysRangeId
+  - courseIds
+  - periodOfDayIds
+properties:
+  contractTypeId:
+    type: integer
+    example: 1
+  weekdaysRangeId:
+    type: integer
+    example: 1
+  courseIds:
+    type: array
+    items:
+      type: integer
+      example: 1
+  periodOfDayIds:
+    type: array
+    items:
+      type: integer
+      example: 1

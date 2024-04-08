@@ -1,0 +1,67 @@
+get:
+  tags:
+    - Intake
+  summary: Get Intakes
+  responses:
+    '200':
+      description: Returns a list of Intake with Cohort grouped by PeriodOfDay
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - statusCode
+              - message
+              - data
+            properties:
+              statusCode:
+                type: integer
+                example: 200
+              message:
+                type: string
+                example: OK
+              data:
+                type: array
+                items:
+                  $ref: '../../schemas/intake/formattedIntake.yml'
+    '400':
+      $ref: '../../index.yml#/components/schemas/400Error'
+    '500':
+      $ref: '../../index.yml#/components/schemas/500Error'
+post:
+  tags:
+    - 'Intake'
+  summary: Create new intake
+  requestBody:
+    description: Create new intake
+    content:
+      application/json:
+        schema:
+          $ref: '../../schemas/intake/intakeDynamicProps.yml'
+  responses:
+    '201':
+      description: Returns created Intake
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - statusCode
+              - message
+              - data
+            properties:
+              statusCode:
+                type: integer
+                example: 201
+              message:
+                type: string
+                example: Created
+              data:
+                allOf:
+                  - $ref: '../../schemas/intake/intakeStaticProps.yml'
+                  - $ref: '../../schemas/intake/intakeDynamicProps.yml'
+                  - $ref: '../../schemas/intake/intakeStaticForeignProps.yml'
+    '400':
+      $ref: '../../index.yml#/components/schemas/400Error'
+    '500':
+      $ref: '../../index.yml#/components/schemas/500Error'

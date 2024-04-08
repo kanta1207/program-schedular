@@ -1,0 +1,8 @@
+type: object
+required:
+  - program
+properties:
+  program:
+    allOf:
+      - $ref: '../program/programStaticProps.yml'
+      - $ref: '../program/programDynamicProps.yml'

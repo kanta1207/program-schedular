@@ -1,0 +1,23 @@
+type: object
+required:
+  - cohortId
+  - weekdaysRangeId
+  - courseId
+  - classroomId
+  - instructorId
+properties:
+  cohortId:
+    type: integer
+    example: 1
+  weekdaysRangeId:
+    type: integer
+    example: 1
+  courseId:
+    type: integer
+    example: 1
+  classroomId:
+    type: integer
+    example: 1
+  instructorId:
+    type: integer
+    example: 1
