@@ -3,7 +3,7 @@ import { CohortsService } from './cohorts.service';
 import { CohortsController } from './cohorts.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { Cohort, Intake, MasterPeriodOfDay, Program, Class } from 'src/entity';
+import { Cohort, Intake, MasterPeriodOfDay, Program, Class } from '../../entity';
 
 @Module({
   imports: [
