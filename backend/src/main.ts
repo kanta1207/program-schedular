@@ -26,6 +26,6 @@ async function bootstrap() {
     allowedHeaders: 'Content-Type, Accept',
 
   });
-  await app.listen(process.env.APP_PORT); // TODO: Replace port number with env variable
+  await app.listen(process.env.PORT); // TODO: Replace port number with env variable
 }
 bootstrap();
