@@ -16,6 +16,9 @@ export const createCourse = async (payload: CreateCoursePayload): Promise<ApiRes
 
     const response = await fetch(baseUrl, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(payload),
     });
     const data = await response.json();
