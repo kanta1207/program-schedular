@@ -15,17 +15,7 @@ async function bootstrap() {
       transform: true,
     }),
   );
-  app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:3002',
-      'https://program-schedular.vercel.app',
-    ],
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    allowedHeaders: 'Content-Type, Accept',
-
-  });
+  app.enableCors({});
   await app.listen(process.env.PORT); // TODO: Replace port number with env variable
 }
 bootstrap();
