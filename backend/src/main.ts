@@ -22,6 +22,9 @@ async function bootstrap() {
       'http://localhost:3002',
       'https://program-schedular.vercel.app',
     ],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    allowedHeaders: 'Content-Type, Accept',
+
   });
   await app.listen(process.env.APP_PORT); // TODO: Replace port number with env variable
 }
