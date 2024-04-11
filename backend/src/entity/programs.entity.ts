@@ -5,6 +5,7 @@ import {
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteAtColumn,
 } from 'typeorm';
 import { Cohort, Course } from './';
 
