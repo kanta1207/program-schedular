@@ -24,7 +24,7 @@ const mainSeeder = async () => {
     await queryRunner.startTransaction();
 
     console.log('Start seeding...');
-    
+
     await masterClassroomSeeder();
     await masterContractTypeSeeder();
     await masterPeriodOfDaySeeder();

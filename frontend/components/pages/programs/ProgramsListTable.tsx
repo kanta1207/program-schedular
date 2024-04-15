@@ -2,9 +2,11 @@
 import { deleteProgram } from '@/actions/programs/deleteProgram';
 import { updateProgram } from '@/actions/programs/updateProgram';
 import ErrorMessages from '@/components/partials/ErrorMessages';
+import { RequiredMark } from '@/components/partials/RequiredMark';
 import TableMenu from '@/components/partials/TableMenu';
 import { TOAST } from '@/constants/_index';
 import { usePagination } from '@/hooks/usePagination';
+import { tableStyle, thRowStyle } from '@/styles/_index';
 import { GetProgramsResponse } from '@/types/program';
 import { TableFooter, TablePagination } from '@mui/material';
 import Button from '@mui/material/Button';
@@ -14,7 +16,7 @@ import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next-nprogress-bar';
 import { useEffect, useState } from 'react';
 import { Controller, FieldValues, SubmitHandler, useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
@@ -71,9 +73,6 @@ const ProgramListTable: React.FC<ProgramListTableProps> = ({ programs }) => {
     setEditProgramId(null);
   };
 
-  const thStyle = { color: '#FFF', borderRight: '#FFF 1px solid' };
-  const thRowStyle = { bgcolor: 'primary.main', '& th': thStyle, '& th:last-child': { borderRight: 'none' } };
-
   const {
     rowsPerPageOptions,
     count,
@@ -91,10 +90,13 @@ const ProgramListTable: React.FC<ProgramListTableProps> = ({ programs }) => {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <Table>
+      <Table sx={tableStyle}>
         <TableHead>
           <TableRow sx={thRowStyle}>
-            <TableCell sx={{ width: 'calc(100% * 10/12)' }}>Name</TableCell>
+            <TableCell sx={{ width: 'calc(100% * 10/12)' }}>
+              Name
+              {editProgramId && <RequiredMark />}
+            </TableCell>
             {/* Empty head for edit and delete */}
             <TableCell sx={{ width: 'calc(100% * 2/12)' }} />
           </TableRow>
@@ -106,7 +108,7 @@ const ProgramListTable: React.FC<ProgramListTableProps> = ({ programs }) => {
                 {editProgramId === program.id ? (
                   // Edit mode
                   <>
-                    <TableCell>
+                    <TableCell sx={{ px: '0.5rem' }}>
                       <Controller
                         control={control}
                         name="name"
@@ -114,7 +116,6 @@ const ProgramListTable: React.FC<ProgramListTableProps> = ({ programs }) => {
                         render={({ field }: any) => {
                           return (
                             <TextField
-                              label="Name"
                               id="name"
                               sx={{ width: '50%' }}
                               value={field.value}
@@ -147,7 +148,7 @@ const ProgramListTable: React.FC<ProgramListTableProps> = ({ programs }) => {
               </TableRow>
             ),
           )}
-          {emptyRows > 0 && <TableRow style={{ height: 73 * emptyRows }} />}
+          {emptyRows > 0 && <TableRow style={{ height: 57 * emptyRows }} />}
         </TableBody>
         <TableFooter>
           <TableRow>

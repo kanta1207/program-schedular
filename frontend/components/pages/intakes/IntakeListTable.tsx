@@ -2,11 +2,13 @@
 import { deleteIntake } from '@/actions/intakes/deleteIntake';
 import { updateIntake } from '@/actions/intakes/updateIntakes';
 import ErrorMessages from '@/components/partials/ErrorMessages';
+import { RequiredMark } from '@/components/partials/RequiredMark';
 import TableMenu from '@/components/partials/TableMenu';
 import { TOAST } from '@/constants/_index';
 import { usePagination } from '@/hooks/usePagination';
+import { dateFormat, datePickerFormat, inBoxScrollBar, tableStyle, thRowStyle } from '@/styles/_index';
 import { GetIntakesResponse } from '@/types/_index';
-import { TableFooter, TablePagination } from '@mui/material';
+import { Box, TableFooter, TablePagination } from '@mui/material';
 import Button from '@mui/material/Button';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -14,11 +16,12 @@ import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
+import { DatePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import dayjs, { Dayjs } from 'dayjs';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useRouter } from 'next-nprogress-bar';
 import { useEffect, useState } from 'react';
 import { Controller, FieldValues, SubmitHandler, useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
@@ -45,7 +48,7 @@ const IntakeListTable: React.FC<IntakeListTableProps> = ({ intakes }) => {
 
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
-      name: null as string | null,
+      name: '' as string,
       startAt: null as Dayjs | null,
       endAt: null as Dayjs | null,
     },
@@ -80,9 +83,6 @@ const IntakeListTable: React.FC<IntakeListTableProps> = ({ intakes }) => {
     setEditIntakeId(null);
   };
 
-  const thStyle = { color: '#FFF', borderRight: '#FFF 1px solid' };
-  const thRowStyle = { bgcolor: 'primary.main', '& th': thStyle, '& th:last-child': { borderRight: 'none' } };
-
   const {
     rowsPerPageOptions,
     count,
@@ -101,121 +101,139 @@ const IntakeListTable: React.FC<IntakeListTableProps> = ({ intakes }) => {
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <form onSubmit={handleSubmit(onSubmit)}>
-        <Table sx={{ minWidth: 650 }}>
-          <TableHead>
-            <TableRow sx={thRowStyle}>
-              <TableCell sx={{ width: 'calc(100% * 2.5/12)' }}>Name</TableCell>
-              <TableCell sx={{ width: 'calc(100% * 1.5/12)' }}>Start Date</TableCell>
-              <TableCell sx={{ width: 'calc(100% * 1.5/12)' }}>End Date</TableCell>
-              <TableCell sx={{ width: 'calc(100% * 2/12)' }}>Morning Cohorts</TableCell>
-              <TableCell sx={{ width: 'calc(100% * 2/12)' }}>Afternoon Cohorts</TableCell>
-              <TableCell sx={{ width: 'calc(100% * 2/12)' }}>Evening Cohorts</TableCell>
-              <TableCell sx={{ width: 'calc(100% * 0.5/12)' }}></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {(rowsPerPage > 0 ? intakes.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage) : intakes).map(
-              (intake) => (
-                <TableRow key={intake.id}>
-                  {editIntakeId === intake.id ? (
-                    // Edit mode
-                    <>
-                      <TableCell>
-                        <Controller
-                          control={control}
-                          name="name"
-                          rules={{ required: true }}
-                          render={({ field }: any) => {
-                            return (
-                              <TextField
-                                label="Name"
-                                id="name"
-                                sx={{ width: '100%' }}
-                                value={field.value}
-                                onChange={(name) => field.onChange(name)}
-                              />
-                            );
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Controller
-                          control={control}
-                          name="startAt"
-                          rules={{ required: true }}
-                          render={({ field }: any) => {
-                            return (
-                              <DatePicker
-                                label="Start Date"
-                                value={field.value}
-                                onChange={(date) => field.onChange(date)}
-                              />
-                            );
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Controller
-                          control={control}
-                          name="endAt"
-                          rules={{ required: true }}
-                          render={({ field }: any) => {
-                            return (
-                              <DatePicker
-                                label="End Date"
-                                value={field.value}
-                                onChange={(date) => field.onChange(date)}
-                              />
-                            );
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell colSpan={4} sx={{ marginLeft: 'auto' }}>
-                        <div className="flex justify-end gap-x-2.5">
-                          <Button variant="outlined" type="button" onClick={handleCancelClick}>
-                            Cancel
-                          </Button>
-                          <Button variant="contained" type="submit">
-                            Save
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </>
-                  ) : (
-                    // Display mode
-                    <>
-                      <TableCell component="th" scope="row">
-                        {intake.name}
-                      </TableCell>
-                      <TableCell>{dayjs(intake.startAt).format('YYYY-MM-DD')}</TableCell>
-                      <TableCell>{dayjs(intake.endAt).format('YYYY-MM-DD')}</TableCell>
-                      {intake.periodOfDays.map((period) => (
-                        <TableCell key={period.id}>{period.cohorts.map((cohort) => cohort.name).join(', ')}</TableCell>
-                      ))}
-                      <TableCell>
-                        <TableMenu id={intake.id} onEdit={handleEditClick} onDelete={deleteIntake} />
-                      </TableCell>
-                    </>
-                  )}
-                </TableRow>
-              ),
-            )}
-            {emptyRows > 0 && <TableRow style={{ height: 73 * emptyRows }} />}
-          </TableBody>
-          <TableFooter>
-            <TableRow>
-              <TablePagination
-                rowsPerPageOptions={rowsPerPageOptions}
-                count={count}
-                rowsPerPage={rowsPerPage}
-                page={page}
-                onPageChange={handleChangePage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
-                ActionsComponent={ActionsComponent}
-              />
-            </TableRow>
-          </TableFooter>
-        </Table>
+        <Box sx={{ overflowX: 'scroll', ...inBoxScrollBar }}>
+          <Table sx={{ minWidth: 650, ...tableStyle }}>
+            <TableHead>
+              <TableRow sx={thRowStyle}>
+                <TableCell sx={{ width: 'calc(100% * 2.5/12)' }}>
+                  Name
+                  {editIntakeId && <RequiredMark />}
+                </TableCell>
+                <TableCell sx={{ width: 'calc(100% * 1.5/12)' }}>
+                  Start Date
+                  {editIntakeId && <RequiredMark />}
+                </TableCell>
+                <TableCell sx={{ width: 'calc(100% * 1.5/12)' }}>
+                  End Date
+                  {editIntakeId && <RequiredMark />}
+                </TableCell>
+                <TableCell sx={{ width: 'calc(100% * 2/12)' }}>Morning Cohorts</TableCell>
+                <TableCell sx={{ width: 'calc(100% * 2/12)' }}>Afternoon Cohorts</TableCell>
+                <TableCell sx={{ width: 'calc(100% * 2/12)' }}>Evening Cohorts</TableCell>
+                <TableCell sx={{ width: 'calc(100% * 0.5/12)' }}></TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {(rowsPerPage > 0 ? intakes.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage) : intakes).map(
+                (intake) => (
+                  <TableRow key={intake.id}>
+                    {editIntakeId === intake.id ? (
+                      // Edit mode
+                      <>
+                        <TableCell sx={{ px: '0.5rem' }}>
+                          <Controller
+                            control={control}
+                            name="name"
+                            rules={{ required: true }}
+                            render={({ field }: any) => {
+                              return (
+                                <TextField
+                                  id="name"
+                                  sx={{ width: '100%' }}
+                                  value={field.value}
+                                  onChange={(name) => field.onChange(name)}
+                                />
+                              );
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell sx={{ px: '0.5rem' }}>
+                          <Controller
+                            control={control}
+                            name="startAt"
+                            rules={{ required: true }}
+                            render={({ field }: any) => {
+                              return (
+                                <DatePicker
+                                  value={field.value}
+                                  format={datePickerFormat}
+                                  onChange={(date) => field.onChange(date)}
+                                />
+                              );
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell sx={{ px: '0.5rem' }}>
+                          <Controller
+                            control={control}
+                            name="endAt"
+                            rules={{ required: true }}
+                            render={({ field }: any) => {
+                              return (
+                                <DatePicker
+                                  value={field.value}
+                                  format={datePickerFormat}
+                                  onChange={(date) => field.onChange(date)}
+                                />
+                              );
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell colSpan={4} sx={{ marginLeft: 'auto' }}>
+                          <div className="flex justify-end gap-x-2.5">
+                            <Button variant="outlined" type="button" onClick={handleCancelClick}>
+                              Cancel
+                            </Button>
+                            <Button variant="contained" type="submit">
+                              Save
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </>
+                    ) : (
+                      // Display mode
+                      <>
+                        <TableCell>{intake.name}</TableCell>
+                        <TableCell>{dayjs(intake.startAt).format(dateFormat)}</TableCell>
+                        <TableCell>{dayjs(intake.endAt).format(dateFormat)}</TableCell>
+                        {intake.periodOfDays.map((period) => (
+                          <TableCell key={period.id}>
+                            <ul className="flex gap-2 items-center">
+                              {period.cohorts.map((cohort) => (
+                                <li key={cohort.id}>
+                                  <Link href={`/cohorts/${cohort.id}`} className="underline">
+                                    {cohort.name}
+                                  </Link>
+                                </li>
+                              ))}
+                            </ul>
+                          </TableCell>
+                        ))}
+                        <TableCell>
+                          <TableMenu id={intake.id} onEdit={handleEditClick} onDelete={deleteIntake} />
+                        </TableCell>
+                      </>
+                    )}
+                  </TableRow>
+                ),
+              )}
+              {emptyRows > 0 && <TableRow style={{ height: 57 * emptyRows }} />}
+            </TableBody>
+            <TableFooter>
+              <TableRow>
+                <TablePagination
+                  rowsPerPageOptions={rowsPerPageOptions}
+                  count={count}
+                  rowsPerPage={rowsPerPage}
+                  page={page}
+                  onPageChange={handleChangePage}
+                  onRowsPerPageChange={handleChangeRowsPerPage}
+                  ActionsComponent={ActionsComponent}
+                />
+              </TableRow>
+            </TableFooter>
+          </Table>
+        </Box>
       </form>
     </LocalizationProvider>
   );
