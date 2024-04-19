@@ -95,7 +95,7 @@ export class IntakesService {
       existingEndAt: existingIntake.endAt,
     });
     if (!isValidDateOrder) {
-      throw new BadRequestException('endAt must be after startAt');
+      throw new BadRequestException('End date must be after start date');
     }
 
     const updateResult = await this.intakeRepository.update(
@@ -123,10 +123,25 @@ export class IntakesService {
   }
 
   async remove(id: number) {
-    const deleteResult = await this.intakeRepository.delete(id);
+    const intake = await this.intakeRepository.findOne({
+      where: {
+        id,
+      },
+      relations: {
+        cohorts: true,
+      },
+    });
 
-    if (deleteResult.affected === 0) {
+    if (!intake) {
       throw new NotFoundException('Intake Not Found');
     }
+
+    if (intake.cohorts.length > 0) {
+      throw new BadRequestException(
+        'Cannot delete intake that contains cohorts',
+      );
+    }
+
+    await this.intakeRepository.delete(id);
   }
 }

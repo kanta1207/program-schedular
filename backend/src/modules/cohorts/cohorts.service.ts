@@ -16,6 +16,8 @@ import {
   MasterPeriodOfDay,
   Program,
   Class,
+  MasterClassroom,
+  Instructor,
 } from '../../entity';
 import { FormattedClass } from './types';
 
@@ -43,6 +45,10 @@ export class CohortsService {
     private readonly programRepository: Repository<Program>,
     @InjectRepository(Class)
     private readonly classRepository: Repository<Class>,
+    @InjectRepository(MasterClassroom)
+    private readonly classroomRepository: Repository<MasterClassroom>,
+    @InjectRepository(Instructor)
+    private readonly instructorRepository: Repository<Instructor>,
   ) {}
 
   async create(createCohortDto: CreateCohortDto) {
@@ -102,28 +108,6 @@ export class CohortsService {
           },
           weekdaysRange: true,
           course: true,
-          classroom: {
-            classes: {
-              cohort: {
-                periodOfDay: true,
-              },
-              classroom: true,
-              weekdaysRange: true,
-            },
-          },
-          instructor: {
-            contractType: true,
-            classes: {
-              cohort: {
-                periodOfDay: true,
-              },
-              weekdaysRange: true,
-              course: true,
-            },
-            courses: { course: true },
-            periodOfDays: { periodOfDay: true },
-            weekdaysRange: true,
-          },
         },
       },
     });
@@ -131,8 +115,56 @@ export class CohortsService {
       throw new NotFoundException('Cohort Not Found');
     }
 
+    // Find all classrooms that are used by the classes in the cohort
+    const classrooms = await this.classroomRepository
+      .find({
+        relations: {
+          classes: {
+            cohort: {
+              periodOfDay: true,
+            },
+            classroom: true,
+            weekdaysRange: true,
+          },
+        },
+      })
+      // Filter out classrooms that are not used by the classes in the cohort
+      .then((classrooms) =>
+        classrooms.filter((classroom) =>
+          classroom.classes.some((clazz) => clazz.cohort.id === id),
+        ),
+      );
+
+    // Find all instructors that are assigned to the classes in the cohort
+    const instructors = await this.instructorRepository
+      .find({
+        relations: {
+          contractType: true,
+          classes: {
+            cohort: {
+              periodOfDay: true,
+            },
+            weekdaysRange: true,
+            course: true,
+          },
+          courses: { course: true },
+          periodOfDays: { periodOfDay: true },
+          weekdaysRange: true,
+        },
+      })
+      // Filter out instructors that are not assigned to the classes in the cohort
+      .then((instructors) =>
+        instructors.filter((instructor) =>
+          instructor.classes.some((clazz) => clazz.cohort.id === id),
+        ),
+      );
+
     let formattedClasses: FormattedClass[] = cohort.classes.map((clazz) => {
-      const { instructor } = clazz;
+      const { id } = clazz;
+      // Find the instructor who teaches the class
+      const instructor = instructors.find((instructor) =>
+        instructor.classes.some((instructorClass) => instructorClass.id === id),
+      );
       const instructorMessages: string[] = [];
 
       if (instructor) {
@@ -207,17 +239,23 @@ export class CohortsService {
         }
       }
 
+      // Find the classroom where the class is held
+      const classroom = classrooms.find((classroom) =>
+        classroom.classes.some((classroomClass) => classroomClass.id === id),
+      );
+
       const classroomMessages: string[] = [];
-      const classroomClasses = clazz.classroom.classes;
+      const classroomClasses = classroom.classes;
+
       for (const classroomClass of classroomClasses) {
         if (classroomMessages.length) break;
         const msgIsClassroomOccupied = checkClassroomDuplication(
           clazz.id,
-          clazz.classroom.id,
+          classroom.id,
           clazz.startAt,
           clazz.endAt,
           clazz.weekdaysRange.id,
-          clazz.cohort.periodOfDay.id,
+          cohort.periodOfDay.id,
           classroomClass.id,
           classroomClass.classroom.id,
           classroomClass.startAt,
@@ -240,10 +278,12 @@ export class CohortsService {
           messages: [],
         },
         classroom: {
-          data: clazz.classroom,
+          // Omitting the "classes" property to remove unnecessary data from the response
+          data: { ...classroom, classes: undefined },
           messages: classroomMessages,
         },
         instructor: {
+          // Omitting the "classes", "contractType", "periodOfDays", "courses", and "weekdaysRange" properties to remove unnecessary data from the response
           data: {
             ...instructor,
             classes: undefined,

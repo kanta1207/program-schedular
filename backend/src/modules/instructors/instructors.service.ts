@@ -1,25 +1,32 @@
-import { In, Repository } from 'typeorm';
 import {
   BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { In, Repository } from 'typeorm';
 
 import { CreateInstructorDto } from './dto/create-instructor.dto';
 import { UpdateInstructorDto } from './dto/update-instructor.dto';
 
+import { addHours } from '../../common/utils';
+
 import {
-  Instructor,
-  CoursesInstructors,
-  MasterContractType,
-  MasterWeekdaysRange,
-  MasterPeriodOfDay,
-  InstructorsPeriodOfDays,
   Course,
+  CoursesInstructors,
+  Instructor,
+  InstructorsPeriodOfDays,
+  MasterContractType,
+  MasterPeriodOfDay,
+  MasterWeekdaysRange,
 } from '../../entity';
 
-import { CONTRACTOR_CONTRACT_TYPE_ID } from '../../common/constants/master.constant';
+import {
+  CONTRACTOR_CONTRACT_TYPE_ID,
+  MON_FRI_WEEKDAYS_RANGE_ID,
+  MON_WED_WEEKDAYS_RANGE_ID,
+  WED_FRI_WEEKDAYS_RANGE_ID,
+} from '../../common/constants/master.constant';
 
 @Injectable()
 export class InstructorsService {
@@ -159,6 +166,156 @@ export class InstructorsService {
     return result;
   }
 
+  async findWithAssignedHours(year?: number) {
+    const targetYear = year || new Date().getFullYear();
+
+    let firstDayOfYear = new Date(targetYear, 0, 1);
+    const dayOfWeek = firstDayOfYear.getDay(); // Get the day of the week for 1/1 (0 = Sunday, 1 = Monday...)
+    // Adjust firstDayOfYear to Monday
+    if (dayOfWeek !== 1) {
+      firstDayOfYear.setDate(
+        firstDayOfYear.getDate() + (dayOfWeek === 0 ? 1 : 8 - dayOfWeek),
+      );
+    }
+    firstDayOfYear = addHours(firstDayOfYear);
+
+    // Check if the week includes days from the target year
+    const firstWeekEndDate = new Date(firstDayOfYear);
+    firstWeekEndDate.setDate(firstDayOfYear.getDate() + 4); // Friday of the first week
+
+    // const endDate = new Date(targetYear + 1, 0, 1);
+    const endDate = addHours(new Date(targetYear + 1, 0, 1));
+
+    const allWeeks = []; // all weeks in 1 year
+    const currentWeekStart = new Date(firstDayOfYear);
+    const dayBeforeNewYear = new Date(targetYear, 0, 0); // 12/31
+
+    // Week starts from the previous year and ends in the target year
+    if (dayBeforeNewYear < firstWeekEndDate) {
+      allWeeks.push({
+        startAt: new Date(currentWeekStart),
+        endAt: new Date(firstWeekEndDate),
+      });
+    }
+    currentWeekStart.setDate(currentWeekStart.getDate() + 7); // Move to the next week's Monday
+
+    while (currentWeekStart < endDate) {
+      const endOfWeek = new Date(currentWeekStart);
+      endOfWeek.setDate(currentWeekStart.getDate() + 4); // Set to Friday of the current week
+
+      allWeeks.push({
+        startAt: new Date(currentWeekStart),
+        endAt: new Date(endOfWeek),
+      });
+
+      currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+    }
+
+    const instructorsRaw = await this.instructorRepository.find({
+      relations: {
+        contractType: true,
+        weekdaysRange: true,
+        courses: {
+          course: true,
+        },
+        classes: {
+          weekdaysRange: true,
+        },
+      },
+      order: {
+        isActive: 'DESC',
+        id: 'DESC',
+        classes: {
+          startAt: 'ASC',
+        },
+      },
+    });
+
+    const instructorPeriodOfDays =
+      await this.instructorsPeriodOfDaysRepository.find({
+        where: {
+          instructor: In(instructorsRaw.map((i) => i.id)),
+        },
+        relations: { periodOfDay: true, instructor: true },
+      });
+
+    const instructors = instructorsRaw.map((instructor) => {
+      const courses = instructor.courses.map((instructorCourse) => ({
+        ...instructorCourse.course,
+      }));
+      const periodOfDays = instructorPeriodOfDays
+        .filter((ipod) => ipod.instructor.id === instructor.id)
+        .map((ipod) => ipod.periodOfDay);
+      return { ...instructor, courses, periodOfDays };
+    });
+
+    const updateAssignedHours = (
+      assignedHours: number,
+      weekdaysRangeId: number,
+    ): number => {
+      switch (weekdaysRangeId) {
+        case MON_FRI_WEEKDAYS_RANGE_ID:
+          return assignedHours + 20;
+        case MON_WED_WEEKDAYS_RANGE_ID:
+          return assignedHours + 10;
+        case WED_FRI_WEEKDAYS_RANGE_ID:
+          return assignedHours + 10;
+        default:
+          return assignedHours;
+      }
+    };
+
+    const instructorsAssignedHours = instructors.map((instructor) => {
+      const assignedHoursForInstructor = allWeeks.map((week) => {
+        const hours = instructor.classes
+          .filter((clazz) => {
+            return week.startAt <= clazz.endAt && week.endAt >= clazz.startAt;
+          })
+          .reduce(
+            (totalHours, clazz) =>
+              updateAssignedHours(totalHours, clazz.weekdaysRange.id),
+            0,
+          );
+
+        let isOverMaximum = false;
+        let isUnderMinimum = false;
+        let isUnderDesired = false;
+        if (instructor.desiredWorkingHours !== null) {
+          isUnderDesired = hours < instructor.desiredWorkingHours;
+        } else {
+          isOverMaximum = instructor.contractType.maxHours < hours;
+          isUnderMinimum = hours < instructor.contractType.minHours;
+        }
+
+        return {
+          startAt: week.startAt,
+          endAt: week.endAt,
+          hours,
+          isOverMaximum,
+          isUnderMinimum,
+          isUnderDesired,
+        };
+      });
+
+      return {
+        id: instructor.id,
+        createdAt: instructor.createdAt,
+        updatedAt: instructor.updatedAt,
+        name: instructor.name,
+        isActive: instructor.isActive,
+        note: instructor.note,
+        desiredWorkingHours: instructor.desiredWorkingHours,
+        contractType: instructor.contractType,
+        weekdaysRange: instructor.weekdaysRange,
+        periodOfDays: instructor.periodOfDays,
+        courses: instructor.courses,
+        assignedHours: assignedHoursForInstructor,
+      };
+    });
+
+    return instructorsAssignedHours;
+  }
+
   async findOne(id: number) {
     const instructor = await this.instructorRepository.findOne({
       where: {
@@ -172,6 +329,7 @@ export class InstructorsService {
           cohort: {
             program: true,
             periodOfDay: true,
+            intake: true,
           },
           weekdaysRange: true,
           classroom: true,
@@ -332,10 +490,24 @@ export class InstructorsService {
   }
 
   async remove(id: number) {
-    const deleteResult = await this.instructorRepository.softDelete(id);
-
-    if (deleteResult.affected === 0) {
-      throw new NotFoundException('Instructor Not Found');
+    const instructor = await this.instructorRepository.findOne({
+      where: {
+        id,
+      },
+      relations: {
+        classes: true,
+      },
+    });
+    if (!instructor) {
+      throw new NotFoundException('Instructor not found');
     }
+
+    if (instructor.classes.length > 0) {
+      throw new BadRequestException(
+        'Cannot delete instructor who is assigned to classes',
+      );
+    }
+
+    await this.instructorRepository.delete(id);
   }
 }

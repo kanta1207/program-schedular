@@ -17,10 +17,10 @@ interface SchedulePreviewProps {
 
 export interface ClassItem {
   cohortId: number;
-  courseId: number;
-  weekdaysRangeId: number;
-  instructorId: number | undefined;
-  classroomId: number;
+  courseId: string;
+  weekdaysRangeId: string;
+  instructorId: string | undefined;
+  classroomId: string;
   startAt: Date;
   endAt: Date;
 }
@@ -56,9 +56,9 @@ export const ScheduleStackView: React.FC<SchedulePreviewProps> = ({
       name: cohorts.find(({ id }) => id === classItem.cohortId)?.name,
       startWeek: getStartWeek(classItem.startAt, intakeStartDate),
       totalWeeks: calculateWeeksBetweenDates(classItem.startAt, classItem.endAt),
-      course: courses.find((course) => course.id === classItem.courseId),
-      weekdaysRange: WEEKDAYS_RANGES.find((range) => range.id === classItem.weekdaysRangeId),
-      instructor: instructors.find((instructor) => instructor.id === classItem.instructorId),
+      course: courses.find((course) => course.id === Number(classItem.courseId)),
+      weekdaysRange: WEEKDAYS_RANGES.find((range) => range.id === Number(classItem.weekdaysRangeId)),
+      instructor: instructors.find((instructor) => instructor.id === Number(classItem.instructorId)),
     }));
   };
 
@@ -191,7 +191,7 @@ export const ScheduleStackView: React.FC<SchedulePreviewProps> = ({
               gridColumn: `${gridColumnStart(classStack.startWeek)} / span ${classStack.totalWeeks}`,
               gridRow:
                 classStack.weekdaysRange?.id === 1 ? '2 / span 2' : classStack.weekdaysRange?.id === 2 ? '2' : '3',
-              bgcolor: `${classStack.weekdaysRange?.color.primary}80`,
+              bgcolor: `${classStack.weekdaysRange?.color.tertiary}`,
               border: '1px solid #FFF',
               color: '#FFF',
             }}

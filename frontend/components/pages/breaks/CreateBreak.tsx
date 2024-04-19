@@ -71,7 +71,15 @@ const CreateBreak = () => {
                     label="Start Date"
                     value={field.value}
                     format={datePickerFormat}
+                    localeText={{
+                      fieldMonthPlaceholder: () => 'MMM',
+                    }}
                     onChange={(date) => field.onChange(date)}
+                    slotProps={{
+                      textField: {
+                        required: true,
+                      },
+                    }}
                   />
                 );
               }}
@@ -87,7 +95,15 @@ const CreateBreak = () => {
                     label="End Date"
                     value={field.value}
                     format={datePickerFormat}
+                    localeText={{
+                      fieldMonthPlaceholder: () => 'MMM',
+                    }}
                     onChange={(date) => field.onChange(date)}
+                    slotProps={{
+                      textField: {
+                        required: true,
+                      },
+                    }}
                   />
                 );
               }}
